@@ -86,6 +86,11 @@ export default function AdminPage() {
         ]);
 
         if (!trainersRes.ok || !classesRes.ok || !bookingsRes.ok) {
+          console.error("Admin API error", {
+            trainersStatus: trainersRes.status,
+            classesStatus: classesRes.status,
+            bookingsStatus: bookingsRes.status,
+          });
           throw new Error("Admin API error");
         }
 

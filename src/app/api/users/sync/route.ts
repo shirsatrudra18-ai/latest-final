@@ -9,13 +9,22 @@ export async function POST() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Trigger a read from Clerk so we fail early if user is invalid
-  await clerkClient.users.getUser(userId);
+  // Fetch Clerk user so we can store profile info
+  const user = await clerkClient.users.getUser(userId);
+  const email = user.primaryEmailAddress?.emailAddress ?? null;
+  const fullName = user.fullName ?? user.username ?? null;
 
   await prisma.user.upsert({
     where: { id: userId },
-    create: { id: userId },
-    update: {},
+    create: {
+      id: userId,
+      email: email ?? undefined,
+      fullName: fullName ?? undefined,
+    },
+    update: {
+      email: email ?? undefined,
+      fullName: fullName ?? undefined,
+    },
   });
 
   return NextResponse.json({ ok: true });

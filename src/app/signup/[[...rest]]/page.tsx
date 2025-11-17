@@ -1,15 +1,15 @@
 "use client";
 
-import { SignIn } from "@clerk/nextjs";
+import { SignUp } from "@clerk/nextjs";
 
-export default function LoginPage() {
+export default function SignupPage() {
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
       <div className="rounded-3xl border border-zinc-800 bg-zinc-950/90 px-6 py-8 shadow-xl shadow-black/50 sm:px-8">
-        <SignIn
+        <SignUp
           routing="path"
-          path="/login"
-          signUpUrl="/signup"
+          path="/signup"
+          signInUrl="/login"
           appearance={{
             elements: {
               formButtonPrimary:

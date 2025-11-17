@@ -25,6 +25,8 @@ enum DayOfWeek {
 
 model User {
   id        String         @id // Clerk user id
+  email     String?
+  fullName  String?
   createdAt DateTime       @default(now())
   bookings  ClassBooking[]
 }

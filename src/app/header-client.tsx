@@ -75,7 +75,7 @@ export function HeaderClient() {
 
           {!isSignedIn && (
             <Link
-              href="/login"
+              href="/signup"
               className="hidden rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-md shadow-blue-500/40 transition hover:bg-blue-500 md:inline-flex"
             >
               JOIN NOW
@@ -102,7 +102,7 @@ export function HeaderClient() {
 
       {/* Sidebar overlay */}
       {isSignedIn && isSidebarOpen && (
-        <div className="fixed inset-0 z-40 flex justify-end bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-sm">
           <div className="h-full w-64 bg-zinc-950 border-l border-zinc-800 p-4 flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-zinc-100">Account</span>
