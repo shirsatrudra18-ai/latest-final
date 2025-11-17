@@ -1,0 +1,62 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+model User {
+  id        String         @id // Clerk user id
+  createdAt DateTime       @default(now())
+  bookings  ClassBooking[]
+}
+
+model Trainer {
+  id        String    @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  classes   GymClass[]
+}
+
+model GymClass {
+  id          String         @id @default(cuid())
+  dayOfWeek   DayOfWeek
+  title       String
+  category    String
+  level       String
+  startTime   String // e.g. "06:00"
+  durationMin Int
+  totalSlots  Int
+  trainer     Trainer        @relation(fields: [trainerId], references: [id])
+  trainerId   String
+  bookings    ClassBooking[]
+  createdAt   DateTime       @default(now())
+}
+
+model ClassBooking {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  gymClass  GymClass @relation(fields: [classId], references: [id])
+  classId   String
+  date      DateTime
+  createdAt DateTime @default(now())
+}
