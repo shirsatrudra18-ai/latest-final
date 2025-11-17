@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 
@@ -18,157 +18,108 @@ type ClassItem = {
   spotsLeft: number;
 };
 
+type GymClassFromApi = {
+  id: string;
+  dayOfWeek:
+    | "MONDAY"
+    | "TUESDAY"
+    | "WEDNESDAY"
+    | "THURSDAY"
+    | "FRIDAY"
+    | "SATURDAY"
+    | "SUNDAY";
+  title: string;
+  category: string;
+  level: string;
+  startTime: string;
+  durationMin: number;
+  totalSlots: number;
+  trainer: {
+    id: string;
+    name: string;
+  };
+  bookings: { id: string }[];
+};
+
+const DAY_LABEL_BY_ENUM: Record<GymClassFromApi["dayOfWeek"], Day> = {
+  MONDAY: "Monday",
+  TUESDAY: "Tuesday",
+  WEDNESDAY: "Wednesday",
+  THURSDAY: "Thursday",
+  FRIDAY: "Friday",
+  SATURDAY: "Saturday",
+  SUNDAY: "Sunday",
+};
+
 const SCHEDULE: Record<Day, ClassItem[]> = {
-  Monday: [
-    {
-      id: "mon-6-hiit",
-      time: "6:00 AM",
-      title: "Morning HIIT",
-      level: "High",
-      coach: "Sarah Johnson",
-      duration: "45 min",
-      spotsLeft: 5,
-    },
-    {
-      id: "mon-9-yoga",
-      time: "9:00 AM",
-      title: "Yoga Flow",
-      level: "Low",
-      coach: "Emma Lee",
-      duration: "60 min",
-      spotsLeft: 8,
-    },
-    {
-      id: "mon-12-strength",
-      time: "12:00 PM",
-      title: "Strength Training",
-      level: "Medium",
-      coach: "Mike Chen",
-      duration: "60 min",
-      spotsLeft: 3,
-    },
-    {
-      id: "mon-17-crossfit",
-      time: "5:00 PM",
-      title: "CrossFit",
-      level: "High",
-      coach: "Jake Williams",
-      duration: "50 min",
-      spotsLeft: 2,
-    },
-  ],
-  Tuesday: [
-    {
-      id: "tue-6-strength",
-      time: "6:00 AM",
-      title: "Barbell Strength",
-      level: "Medium",
-      coach: "Alex Carter",
-      duration: "60 min",
-      spotsLeft: 4,
-    },
-    {
-      id: "tue-18-conditioning",
-      time: "6:00 PM",
-      title: "Conditioning Circuit",
-      level: "High",
-      coach: "Maya Singh",
-      duration: "45 min",
-      spotsLeft: 6,
-    },
-  ],
-  Wednesday: [
-    {
-      id: "wed-7-mobility",
-      time: "7:00 AM",
-      title: "Mobility & Core",
-      level: "Low",
-      coach: "Diego Morales",
-      duration: "40 min",
-      spotsLeft: 10,
-    },
-    {
-      id: "wed-19-hiit",
-      time: "7:00 PM",
-      title: "Evening HIIT",
-      level: "High",
-      coach: "Sarah Johnson",
-      duration: "45 min",
-      spotsLeft: 5,
-    },
-  ],
-  Thursday: [
-    {
-      id: "thu-6-strength",
-      time: "6:00 AM",
-      title: "Strength Foundations",
-      level: "Medium",
-      coach: "Alex Carter",
-      duration: "60 min",
-      spotsLeft: 7,
-    },
-    {
-      id: "thu-18-yoga",
-      time: "6:00 PM",
-      title: "Yoga & Recovery",
-      level: "Low",
-      coach: "Emma Lee",
-      duration: "60 min",
-      spotsLeft: 6,
-    },
-  ],
-  Friday: [
-    {
-      id: "fri-6-conditioning",
-      time: "6:00 AM",
-      title: "Engine Builder",
-      level: "High",
-      coach: "Maya Singh",
-      duration: "45 min",
-      spotsLeft: 5,
-    },
-    {
-      id: "fri-17-hypertrophy",
-      time: "5:00 PM",
-      title: "Upper Body Pump",
-      level: "Medium",
-      coach: "Mike Chen",
-      duration: "60 min",
-      spotsLeft: 4,
-    },
-  ],
-  Saturday: [
-    {
-      id: "sat-9-team",
-      time: "9:00 AM",
-      title: "Team Conditioning",
-      level: "High",
-      coach: "Coaching Team",
-      duration: "60 min",
-      spotsLeft: 12,
-    },
-  ],
-  Sunday: [
-    {
-      id: "sun-10-recovery",
-      time: "10:00 AM",
-      title: "Recovery & Mobility Lab",
-      level: "Low",
-      coach: "Diego Morales",
-      duration: "45 min",
-      spotsLeft: 15,
-    },
-  ],
+  Monday: [],
+  Tuesday: [],
+  Wednesday: [],
+  Thursday: [],
+  Friday: [],
+  Saturday: [],
+  Sunday: [],
 };
 
 export default function ClassesPage() {
   const [selectedDay, setSelectedDay] = useState<Day>("Monday");
   const [bookingClass, setBookingClass] = useState<ClassItem | null>(null);
   const [selectedDate, setSelectedDate] = useState("");
+  const [schedule, setSchedule] = useState<Record<Day, ClassItem[]>>(SCHEDULE);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { isSignedIn } = useUser();
   const router = useRouter();
 
-  const classesForDay = SCHEDULE[selectedDay];
+  useEffect(() => {
+    async function loadClasses() {
+      try {
+        setLoading(true);
+        const res = await fetch("/api/classes");
+        if (!res.ok) {
+          throw new Error("Failed to load classes");
+        }
+        const data: { classes: GymClassFromApi[] } = await res.json();
+
+        const nextSchedule: Record<Day, ClassItem[]> = {
+          Monday: [],
+          Tuesday: [],
+          Wednesday: [],
+          Thursday: [],
+          Friday: [],
+          Saturday: [],
+          Sunday: [],
+        };
+
+        for (const cls of data.classes) {
+          const dayLabel = DAY_LABEL_BY_ENUM[cls.dayOfWeek];
+          const spotsLeft = Math.max(cls.totalSlots - cls.bookings.length, 0);
+          const item: ClassItem = {
+            id: cls.id,
+            time: cls.startTime,
+            title: cls.title,
+            level: cls.level as ClassItem["level"],
+            coach: cls.trainer.name,
+            duration: `${cls.durationMin} min`,
+            spotsLeft,
+          };
+          nextSchedule[dayLabel].push(item);
+        }
+
+        setSchedule(nextSchedule);
+        setError(null);
+      } catch (e) {
+        console.error(e);
+        setError("Could not load classes. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadClasses();
+  }, []);
+
+  const classesForDay = schedule[selectedDay];
 
   const handleOpenBooking = (item: ClassItem) => {
     setBookingClass(item);
@@ -239,7 +190,19 @@ export default function ClassesPage() {
 
       {/* Schedule cards */}
       <div className="space-y-4">
-        {classesForDay.map((item) => (
+        {loading && (
+          <p className="text-center text-sm text-zinc-400">Loading classes...</p>
+        )}
+        {!loading && error && (
+          <p className="text-center text-sm text-red-400">{error}</p>
+        )}
+        {!loading && !error && classesForDay.length === 0 && (
+          <p className="text-center text-sm text-zinc-400">
+            No classes scheduled for {selectedDay} yet.
+          </p>
+        )}
+        {!loading && !error &&
+          classesForDay.map((item) => (
           <article
             key={item.id}
             className="rounded-3xl border border-zinc-800 bg-zinc-950/80 p-4 shadow-sm shadow-black/40"

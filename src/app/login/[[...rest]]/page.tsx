@@ -13,9 +13,8 @@ export default function LoginPage() {
           appearance={{
             elements: {
               formButtonPrimary:
-                "bg-lime-500 hover:bg-lime-400 text-black font-semibold shadow-md shadow-lime-500/40", 
-              card:
-                "bg-transparent shadow-none border-0", 
+                "bg-lime-500 hover:bg-lime-400 text-black font-semibold shadow-md shadow-lime-500/40",
+              card: "bg-transparent shadow-none border-0",
             },
           }}
         />
